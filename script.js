@@ -4,10 +4,8 @@ const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)
 
 let width = 0;
 let height = 0;
-let particles = [];
+let marks = [];
 let frame = 0;
-
-const colors = ["#55d6be", "#91df7d", "#e0b15c", "#ff6b6b"];
 
 function resizeCanvas() {
   const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
@@ -18,118 +16,86 @@ function resizeCanvas() {
   canvas.style.width = `${width}px`;
   canvas.style.height = `${height}px`;
   ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-  seedParticles();
+  seedMarks();
 }
 
-function seedParticles() {
-  const count = Math.min(92, Math.max(42, Math.floor((width * height) / 18000)));
-  particles = Array.from({ length: count }, (_, index) => {
-    const group = index % colors.length;
-    return {
-      x: Math.random() * width,
-      y: Math.random() * height,
-      radius: 1.2 + Math.random() * 2.8,
-      vx: (Math.random() - 0.5) * 0.35,
-      vy: (Math.random() - 0.5) * 0.35,
-      color: colors[group],
-      alpha: 0.18 + Math.random() * 0.42,
-    };
-  });
+function seedMarks() {
+  const count = Math.min(120, Math.max(54, Math.floor((width * height) / 15000)));
+  marks = Array.from({ length: count }, () => ({
+    x: Math.random() * width,
+    y: Math.random() * height,
+    length: 8 + Math.random() * 42,
+    speed: 0.05 + Math.random() * 0.12,
+    alpha: 0.025 + Math.random() * 0.09,
+  }));
 }
 
-function drawAxes() {
-  const left = width * 0.08;
-  const bottom = height * 0.84;
-  const axisWidth = Math.min(width * 0.28, 360);
-  const axisHeight = Math.min(height * 0.28, 240);
+function drawBackground() {
+  const gradient = ctx.createLinearGradient(0, 0, 0, height);
+  gradient.addColorStop(0, "#050505");
+  gradient.addColorStop(0.54, "#080807");
+  gradient.addColorStop(1, "#030303");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
 
+  const horizon = height * 0.72;
   ctx.save();
-  ctx.globalAlpha = 0.24;
-  ctx.strokeStyle = "#9eaca7";
+  ctx.globalAlpha = 0.1;
+  ctx.strokeStyle = "#eeeae1";
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(left, bottom);
-  ctx.lineTo(left + axisWidth, bottom);
-  ctx.moveTo(left, bottom);
-  ctx.lineTo(left, bottom - axisHeight);
+  ctx.moveTo(width * 0.06, horizon);
+  ctx.lineTo(width * 0.94, horizon + Math.sin(frame * 0.006) * 4);
   ctx.stroke();
+  ctx.restore();
 
-  ctx.globalAlpha = 0.14;
-  for (let i = 1; i < 5; i += 1) {
-    const x = left + (axisWidth / 5) * i;
-    const y = bottom - (axisHeight / 5) * i;
+  ctx.save();
+  ctx.globalAlpha = 0.08;
+  ctx.fillStyle = "#aebec0";
+  ctx.fillRect(width * 0.5 - 0.5, 0, 1, height);
+  ctx.restore();
+}
+
+function drawMarks() {
+  ctx.save();
+  ctx.strokeStyle = "#eeeae1";
+  ctx.lineWidth = 1;
+  for (const mark of marks) {
+    if (!prefersReducedMotion) {
+      mark.y += mark.speed;
+      if (mark.y > height + 50) {
+        mark.y = -50;
+        mark.x = Math.random() * width;
+      }
+    }
+    ctx.globalAlpha = mark.alpha;
     ctx.beginPath();
-    ctx.moveTo(x, bottom);
-    ctx.lineTo(x, bottom - axisHeight);
-    ctx.moveTo(left, y);
-    ctx.lineTo(left + axisWidth, y);
+    ctx.moveTo(mark.x, mark.y);
+    ctx.lineTo(mark.x + 0.8, mark.y + mark.length);
     ctx.stroke();
   }
   ctx.restore();
 }
 
-function drawParticles() {
-  for (const particle of particles) {
-    particle.x += particle.vx;
-    particle.y += particle.vy;
-
-    if (particle.x < -20) particle.x = width + 20;
-    if (particle.x > width + 20) particle.x = -20;
-    if (particle.y < -20) particle.y = height + 20;
-    if (particle.y > height + 20) particle.y = -20;
-
-    ctx.save();
-    ctx.globalAlpha = particle.alpha;
-    ctx.fillStyle = particle.color;
-    ctx.beginPath();
-    ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
-}
-
-function drawConnections() {
+function drawGrain() {
   ctx.save();
-  ctx.lineWidth = 0.7;
-  for (let i = 0; i < particles.length; i += 1) {
-    for (let j = i + 1; j < particles.length; j += 1) {
-      const a = particles[i];
-      const b = particles[j];
-      const dx = a.x - b.x;
-      const dy = a.y - b.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance < 118) {
-        ctx.globalAlpha = (1 - distance / 118) * 0.14;
-        ctx.strokeStyle = a.color;
-        ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
-        ctx.stroke();
-      }
-    }
+  for (let i = 0; i < 180; i += 1) {
+    const x = Math.random() * width;
+    const y = Math.random() * height;
+    const shade = 160 + Math.random() * 70;
+    ctx.globalAlpha = 0.025 + Math.random() * 0.035;
+    ctx.fillStyle = `rgb(${shade}, ${shade}, ${shade - 8})`;
+    ctx.fillRect(x, y, 1, 1);
   }
   ctx.restore();
 }
 
-function drawScanline() {
-  const y = (frame * 0.45) % (height + 120) - 60;
-  const gradient = ctx.createLinearGradient(0, y - 30, 0, y + 30);
-  gradient.addColorStop(0, "rgba(85, 214, 190, 0)");
-  gradient.addColorStop(0.5, "rgba(85, 214, 190, 0.13)");
-  gradient.addColorStop(1, "rgba(85, 214, 190, 0)");
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, y - 30, width, 60);
-}
-
 function render() {
-  ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#05070a";
-  ctx.fillRect(0, 0, width, height);
-  drawAxes();
-  drawConnections();
-  drawParticles();
+  drawBackground();
+  drawMarks();
+  drawGrain();
+
   if (!prefersReducedMotion) {
-    drawScanline();
     frame += 1;
     requestAnimationFrame(render);
   }
