@@ -2,6 +2,8 @@
 
 Biomedical research | Clinical sample processing | Translational research workflows
 
+Academic portfolio website: [huibinox.github.io/Huibinox](https://huibinox.github.io/Huibinox/)
+
 I am a clinical and translational researcher with hospital- and university-based research experience in Ireland. My work focuses on sample-supported experimental workflows, extracellular vesicle analysis, respiratory sample studies, ICU-based translational biomarker research, and clinical data linkage.
 
 I am especially interested in applying clinical sample processing, assay workflows, and research data organization to women's health, pregnancy, and maternal-neonatal research. I am also building my coding and reproducible research skills with R and GitHub.
